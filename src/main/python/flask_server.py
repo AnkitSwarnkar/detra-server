@@ -137,37 +137,25 @@ class FlightSearch(Resource):
             trip_inbound_data["returnBoardingDateTime"] = flight["offerItems"][0]["services"][0]["segments"][0]["flightSegment"]["departure"]["at"]
             trip_inbound_data["returnPrice"] = str(round(float(flight["offerItems"][0]["price"]["total"]) + float(flight["offerItems"][0]["price"]["totalTaxes"]),2))
             trips_inbound_data.append(trip_inbound_data)
-        # combine in and outbound flights (TODO:  sort and combine smart!!)
-        # >sort outbount & inbound lists
+        # combine in and outbound flights
+        # sort outbount & inbound lists
         trips_outbound_data.sort(key=lambda k: float(k['departurePrice']))
         trips_inbound_data.sort(key=lambda k: float(k['returnPrice']))
-        # >create all combinations of top X in- and outbound flights
+        # create all combinations of top X in- and outbound flights
         roundtrip_combinations = self.create_combinations_of_top_x_dictionaries(trips_outbound_data, trips_inbound_data, math.ceil(math.sqrt(num_of_return_flights)))
-        # >sort combinations
+        # sort combinations
         roundtrip_combinations.sort(key=lambda k: float(k['departurePrice']) + float(k['returnPrice']))
-        # >return best(first) Y combinations
-
-        # round_trips_data = list(zip(trips_outbound_data, trips_inbound_data))
-        # for x in range(0, len(roundtrip_combinations)-1):
-        #     print(float(roundtrip_combinations[x]["departurePrice"]) + float(roundtrip_combinations[x]["returnPrice"]))
-            # print(roundtrip_combinations[x]["departurePrice"] + roundtrip_combinations[x]["returnPrice"])
-        # print(trips_outbound_data)
-        # for x in range(0, len(roundtrip_combinations)-1):
-        #     print(roundtrip_combinations[x])
-
+        # return best(first) Y combinations
         #  limit output roundtrips
         roundtrip_combinations_limited = []
         for x in range(0, num_of_return_flights-1):
             roundtrip_combinations_limited.append(roundtrip_combinations[x])
-
-        for round_trip in roundtrip_combinations_limited:
-            print(float(round_trip["departurePrice"]) + float(round_trip["returnPrice"]))
-
-        # round_trip_data["totalPrice"] = round_trip_data["returnPrice"] + round_trip_data["returnOrigin"]
+        # print
+        # for round_trip in roundtrip_combinations_limited:
+        #     print(round_trip)
+            # print(float(round_trip["departurePrice"]) + float(round_trip["returnPrice"]))
 
         # send data to frontend
-        # return jsonify({'return': response_outbound.data})
-        print(roundtrip_combinations_limited)
         return roundtrip_combinations_limited
 
 
