@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from flask_restful import Resource, Api
 from amadeus import Client, ResponseError
 import config
+import math
 import json
 app = Flask(__name__)
 api = Api(app)
@@ -84,6 +85,8 @@ class FlightSearch(Resource):
 
         # Corresponds to POST request
     def post(self):
+        # constant variables
+        num_of_return_flights = 30
 
         data_from_frontend = request.get_json()     # status code
         data_from_frontend_dict = dict(data_from_frontend)
@@ -136,29 +139,36 @@ class FlightSearch(Resource):
             trips_inbound_data.append(trip_inbound_data)
         # combine in and outbound flights (TODO:  sort and combine smart!!)
         # >sort outbount & inbound lists
-        trips_outbound_data.sort(key=lambda k: k['departurePrice'])
-        trips_inbound_data.sort(key=lambda k: k['returnPrice'])
+        trips_outbound_data.sort(key=lambda k: float(k['departurePrice']))
+        trips_inbound_data.sort(key=lambda k: float(k['returnPrice']))
         # >create all combinations of top X in- and outbound flights
-        roundtrip_combinations = self.create_combinations_of_top_x_dictionaries(trips_outbound_data, trips_inbound_data, 10)
+        roundtrip_combinations = self.create_combinations_of_top_x_dictionaries(trips_outbound_data, trips_inbound_data, math.ceil(math.sqrt(num_of_return_flights)))
         # >sort combinations
-        # roundtrip_combinations.sort(key=lambda k: k['returnPrice'])
+        roundtrip_combinations.sort(key=lambda k: float(k['departurePrice']) + float(k['returnPrice']))
         # >return best(first) Y combinations
 
         # round_trips_data = list(zip(trips_outbound_data, trips_inbound_data))
-        round_trips_data = []
-        for x in range(0, len(roundtrip_combinations)-1):
-            print(float(roundtrip_combinations[x]["departurePrice"]) + float(roundtrip_combinations[x]["returnPrice"]))
+        # for x in range(0, len(roundtrip_combinations)-1):
+        #     print(float(roundtrip_combinations[x]["departurePrice"]) + float(roundtrip_combinations[x]["returnPrice"]))
+            # print(roundtrip_combinations[x]["departurePrice"] + roundtrip_combinations[x]["returnPrice"])
         # print(trips_outbound_data)
         # for x in range(0, len(roundtrip_combinations)-1):
         #     print(roundtrip_combinations[x])
-        # for flight_out in trips_outbound_data:
-        #     print(flight_out)
+
+        #  limit output roundtrips
+        roundtrip_combinations_limited = []
+        for x in range(0, num_of_return_flights-1):
+            roundtrip_combinations_limited.append(roundtrip_combinations[x])
+
+        for round_trip in roundtrip_combinations_limited:
+            print(float(round_trip["departurePrice"]) + float(round_trip["returnPrice"]))
 
         # round_trip_data["totalPrice"] = round_trip_data["returnPrice"] + round_trip_data["returnOrigin"]
 
         # send data to frontend
-        return jsonify({'return': response_outbound.data})
-
+        # return jsonify({'return': response_outbound.data})
+        print(roundtrip_combinations_limited)
+        return roundtrip_combinations_limited
 
 
 api.add_resource(Hello, '/')
