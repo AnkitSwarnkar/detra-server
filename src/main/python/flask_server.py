@@ -1,12 +1,21 @@
 # flask server code
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_restful import Resource, Api
 from amadeus import Client, ResponseError
 import config
 import math
 import json
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder="static", static_url_path='')
 api = Api(app)
+
+
+@app.route('/group-chat')
+def hello():
+    data = {'app_id': "1d595486132b4f129d960346a5dfefb2",
+            'channel': "test",
+            'token':"0061d595486132b4f129d960346a5dfefb2IACrK2g+caVtV5Sm9Lz7Y6pUmhu5YpKJTewx/vT9r2CJBgx+f9gAAAAAEADB6e0i4dhJXgEAAQDg2Ele"}
+    return render_template('indexdummy.html', data=data)
+
 
 # a class for a particular resource : Default
 class Hello(Resource):
@@ -38,18 +47,19 @@ class FlightResult(Resource):
             Find best flight offers from Madrid to New York
             '''
             response = amadeus_client.shopping.flight_offers.get(origin='MAD', destination='NYC', departureDate='2020-06-01')
-            print(type(response.data))
             return jsonify({'return': response.data})
         # print(response.data)
         except ResponseError as error:
             raise error
 
 # a class for a particular resource : Square
+
 class Square(Resource):
 
     def get(self, num):
 
         return jsonify({'square': num**2})
+
 
 # a class for a particular resource : flightsearch
 class FlightSearch(Resource):
@@ -90,6 +100,7 @@ class FlightSearch(Resource):
 
         data_from_frontend = request.get_json()     # status code
         data_from_frontend_dict = dict(data_from_frontend)
+        print(data_from_frontend_dict)
         # Authorize
         # call
         # prepare result
@@ -103,9 +114,6 @@ class FlightSearch(Resource):
             response_outbound = amadeus_client.shopping.flight_offers.get(origin=data_from_frontend_dict['origin'],
                                                                  destination=data_from_frontend_dict['destination'],
                                                                  departureDate=data_from_frontend_dict['fromDate'])
-        except ResponseError as error:
-            raise error
-        try:
             '''
             Find best flight offers for inbound flight
             '''
@@ -113,10 +121,11 @@ class FlightSearch(Resource):
                                                                         destination=data_from_frontend_dict['origin'],
                                                                         departureDate=data_from_frontend_dict['toDate'])
         except ResponseError as error:
+            print("Amadeus Error")
             raise error
 
         # preprocess and filter data
-        data_outbound = response_outbound.data
+        # data_outbound = response_outbound.data
         trips_outbound_data = []
         trips_inbound_data = []
         # extract data for sending to frontend
@@ -159,7 +168,6 @@ class FlightSearch(Resource):
         return roundtrip_combinations_limited
 
 
-api.add_resource(Hello, '/')
 api.add_resource(FlightSearch, '/tripanion/flightsearch')
 api.add_resource(FlightResult, '/FlightStatus')
 api.add_resource(Square, '/square/<int:num>')
